@@ -21,4 +21,8 @@ router.post('/deleteReview', authController.protect, serviceProviderController.d
 router.post('/addToFavourites', authController.protect, serviceProviderController.addToFavourites)
 router.get('/previousReviews', authController.protect, serviceProviderController.previousReviews)
 
+// common
+router.get('/myprofile', authController.protect, serviceProviderController.myProfile)
+
+
 module.exports = router;

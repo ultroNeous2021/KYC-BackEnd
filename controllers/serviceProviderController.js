@@ -208,3 +208,19 @@ exports.previousReviews = catchAsyncError(async (req, res, next) => {
 
     sendResponse(reviews, 200, res)
 })
+
+exports.myProfile = catchAsyncError(async (req, res, next) => {
+
+    const results = await ServiceProvider.findById(req.user._id)
+        .populate('reviews favourites')
+
+    sendResponse(results, 200, res)
+})
+
+exports.editProfile = catchAsyncError(async (req, res, next) => {
+
+    const results = await ServiceProvider.findById(req.user._id)
+        .populate('reviews favourites')
+
+    sendResponse(results, 200, res)
+})

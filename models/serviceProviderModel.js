@@ -43,6 +43,8 @@ const ServiceProviderSchema = new mongoose.Schema(
     },
     reviews: {
       type: Array,
+      default: [],
+      ref: "Review"
     },
     otp: {
       type: Number,
