@@ -23,6 +23,7 @@ router.get('/previousReviews', authController.protect, serviceProviderController
 
 // common
 router.get('/myprofile', authController.protect, serviceProviderController.myProfile)
+router.post('/editProfile', authController.protect, serviceProviderController.uploadUserPhoto, serviceProviderController.resizePhoto, serviceProviderController.editProfile)
 
 
 module.exports = router;

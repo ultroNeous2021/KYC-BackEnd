@@ -1,8 +1,9 @@
 const Review = require("../models/reviewModel")
 const Customer = require("../models/customerModel")
 const catchAsyncError = require("../utils/catchAsyncError")
-const { sendResponse } = require("../utils/commonFunctions")
+const { sendResponse, upload } = require("../utils/commonFunctions")
 const ServiceProvider = require("../models/serviceProviderModel")
+const sharp = require("sharp")
 
 
 const sendResponseValue = (res, data) => {
@@ -199,6 +200,8 @@ exports.addToFavourites = catchAsyncError(async (req, res, next) => {
 
     let reviews = await ServiceProvider.findByIdAndUpdate(req.user._id, { favourites: newFavourites }, { new: true }).populate('favourites')
 
+    reviews = reviews.favourites
+
     sendResponse(reviews, 200, res)
 
 })
@@ -211,16 +214,31 @@ exports.previousReviews = catchAsyncError(async (req, res, next) => {
 
 exports.myProfile = catchAsyncError(async (req, res, next) => {
 
-    const results = await ServiceProvider.findById(req.user._id)
-        .populate('reviews favourites')
+    let results = await ServiceProvider.findById(req.user._id)
+        .select('-favourites -previousRatings')
 
+    let reviewsLength = results.reviews.length
+    results = { ...results._doc, reviews: reviewsLength }
     sendResponse(results, 200, res)
 })
+
+exports.uploadUserPhoto = upload.single("image");
+
+exports.resizePhoto = (req, res, next) => {
+    if (!req.file) return next();
+
+    req.file.filename = `serviceprovider-${req.user.id}`;
+
+    sharp(req.file.buffer)
+        .jpeg({ quality: 100 })
+        .toFile(`public/images/serviceproviders/${req.file.filename}.jpeg`);
+
+    next();
+};
 
 exports.editProfile = catchAsyncError(async (req, res, next) => {
-
-    const results = await ServiceProvider.findById(req.user._id)
-        .populate('reviews favourites')
-
-    sendResponse(results, 200, res)
+    const user = await ServiceProvider.findByIdAndUpdate(req.user._id, { name: req.body.name, image: req.file ? `public/images/serviceproviders/${req.file.filename}.jpeg` : req.user.image }, { new: true })
+    sendResponse(user, 200, res)
 })
+
+

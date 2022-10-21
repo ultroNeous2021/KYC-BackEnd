@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const sharp = require("sharp");
+const AppError = require("./appError");
 
 const jwtToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET_KEY, {
@@ -25,6 +26,22 @@ const generateOtp = () => {
   return Math.floor(Math.random() * 9000 + 1000);
 };
 
+const multerStorage = multer.memoryStorage();
+const multerFilter = (req, file, cb) => {
 
-module.exports = { jwtToken, sendResponse, generateOtp };
+  const whitelist = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+
+  if (whitelist.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new AppError(401, "Only jpeg, png, jpg and webp files are allowed"));
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+
+module.exports = { jwtToken, sendResponse, generateOtp, upload };
 
