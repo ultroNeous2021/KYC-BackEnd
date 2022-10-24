@@ -277,41 +277,43 @@ exports.myReviews = catchAsyncError(async (req, res, next) => {
 
 exports.addToFavourites = catchAsyncError(async (req, res, next) => {
   const { id } = req.body;
-  const { favourites } = req.user;
+  const { favouriteReviews } = req.user;
 
   let newFavourites;
 
-  if (favourites.includes(id)) {
-    newFavourites = favourites.filter((el) => el !== id);
+  if (favouriteReviews.includes(id)) {
+    newFavourites = favouriteReviews.filter((el) => el !== id);
   } else {
-    newFavourites = [...favourites, id];
+    newFavourites = [...favouriteReviews, id];
   }
 
   let reviews = await ServiceProvider.findByIdAndUpdate(
     req.user._id,
-    { favourites: newFavourites },
+    { favouriteReviews: newFavourites },
     { new: true }
-  )
-    .populate("favourites")
-    .select("customerName");
+  ).populate("favouriteReviews", "customerName starsRating");
 
-  reviews = reviews.favourites;
+  reviews = reviews.favouriteReviews;
 
   sendResponse(reviews, 200, res);
 });
 
 exports.previousRatings = catchAsyncError(async (req, res, next) => {
-  const favourites = req.user.favourites;
+  const favourites = req.user.favouriteReviews;
 
   const pageOptions = {
     page: parseInt(req.query.page) || 0,
     limit: parseInt(req.query.limit) || 10,
   };
 
-  let previousRatings = await Review.find(
-    { serviceProviderId: req.user._id },
-    { skip: pageOptions.page, limit: pageOptions.limit }
-  ).sort("-updatedAt");
+  let previousRatings = await Review.find({
+    serviceProviderId: req.user._id,
+  })
+    .skip(pageOptions.page)
+    .limit(pageOptions.limit)
+    .sort("-updatedAt");
+
+  console.log(previousRatings);
 
   previousRatings = previousRatings.map((el) =>
     favourites.includes(el._id)
@@ -324,11 +326,8 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
 
 exports.myProfile = catchAsyncError(async (req, res, next) => {
   let results = await ServiceProvider.findById(req.user._id).select(
-    "-favourites -previousRatings -favouriteCustomers"
+    "-favouriteReviews -previousRatings -favouriteCustomers -reviews"
   );
-
-  let reviewsLength = results.reviews.length;
-  results = { ...results._doc, reviews: reviewsLength };
   sendResponse(results, 200, res);
 });
 
@@ -356,7 +355,7 @@ exports.editProfile = catchAsyncError(async (req, res, next) => {
         : req.user.image,
     },
     { new: true }
-  ).select("-favourites -previousRatings -favouriteCustomers");
+  ).select("-favouriteReviews -previousRatings -favouriteCustomers");
 
   user = { ...user._doc, reviews: user.reviews.length };
   sendResponse(user, 200, res);
@@ -396,7 +395,7 @@ exports.search = catchAsyncError(async (req, res, next) => {
 exports.homeScreen = catchAsyncError(async (req, res, next) => {
   let data = await ServiceProvider.findById(req.user._id)
     .populate({
-      path: "favourites reviews",
+      path: "favouriteReviews reviews",
       options: { perDocumentLimit: 10 },
       select: "customerName overallRating review updatedAt totalReviews",
     })
@@ -424,11 +423,11 @@ exports.addToFavouriteCustomer = catchAsyncError(async (req, res, next) => {
     { new: true }
   );
 
-  let favourites = await Review.find({
-    _id: {
+  let favouriteCustomersReviews = await Review.find({
+    customerId: {
       $in: favouriteCustomerValues.favouriteCustomers,
     },
   }).select("customerName overallRating review");
 
-  sendResponse(favourites, 200, res);
+  sendResponse(favouriteCustomersReviews, 200, res);
 });
