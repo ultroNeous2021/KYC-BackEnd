@@ -10,17 +10,16 @@ const jwtToken = (id) => {
 };
 
 const sendResponse = (data, statusCode, res, sendToken) => {
-  let token = ""
+  let token = "";
   if (sendToken === true) {
     token = jwtToken(data._id);
   }
 
   res.status(statusCode).json({
     token,
-    data
+    data,
   });
 };
-
 
 const generateOtp = () => {
   return Math.floor(Math.random() * 9000 + 1000);
@@ -28,7 +27,6 @@ const generateOtp = () => {
 
 const multerStorage = multer.memoryStorage();
 const multerFilter = (req, file, cb) => {
-
   const whitelist = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 
   if (whitelist.includes(file.mimetype)) {
@@ -44,4 +42,3 @@ const upload = multer({
 });
 
 module.exports = { jwtToken, sendResponse, generateOtp, upload };
-
