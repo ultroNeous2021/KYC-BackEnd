@@ -19,6 +19,7 @@ const CustomerSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         required: [true, errorMessages.other.customer],
+        ref: "Review",
       },
     ],
     totalReviews: {
@@ -39,38 +40,33 @@ const CustomerSchema = new mongoose.Schema(
     },
     question0: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question1: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question2: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question3: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question4: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     isActive: {
       type: Boolean,

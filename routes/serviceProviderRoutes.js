@@ -59,6 +59,11 @@ router.get(
   authController.protect,
   serviceProviderController.myReviews
 );
+router.get(
+  "/getquestionsforreview",
+  authController.protect,
+  serviceProviderController.getQuestionsForReview
+);
 
 // common
 router.get(
@@ -87,6 +92,11 @@ router.post(
   "/addToFavouriteCustomer",
   authController.protect,
   serviceProviderController.addToFavouriteCustomer
+);
+router.post(
+  "/getCustomerDetails",
+  authController.protect,
+  serviceProviderController.getCustomerDetails
 );
 
 module.exports = router;

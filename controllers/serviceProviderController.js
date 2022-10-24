@@ -6,6 +6,7 @@ const ServiceProvider = require("../models/serviceProviderModel");
 const sharp = require("sharp");
 const AppError = require("../utils/appError");
 const { errorMessages } = require("../utils/messages");
+const Question = require("../models/questionModel");
 
 const sendResponseValue = (res, data) => {
   res.status(200).json({
@@ -322,6 +323,26 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
   );
 
   sendResponse(previousRatings, 200, res);
+});
+
+exports.getQuestionsForReview = catchAsyncError(async (req, res, next) => {
+  const questions = await Question.find()
+    .limit(5)
+    .select("-createdAt -updatedAt -isActive -__v");
+
+  sendResponse(questions, 200, res);
+});
+
+exports.getCustomerDetails = catchAsyncError(async (req, res, next) => {
+  const { id } = req.body;
+
+  const populateString = `question0.questionId question1.questionId question2.questionId question3.questionId question4.questionId`;
+
+  const customer = await Customer.findById(id)
+    .populate("reviews", "serviceProviderName review updatedAt overallRating")
+    .populate(populateString, "_id title details");
+
+  sendResponse(customer, 200, res);
 });
 
 exports.myProfile = catchAsyncError(async (req, res, next) => {
