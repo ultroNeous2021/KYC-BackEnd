@@ -2,13 +2,9 @@ const jwt = require("jsonwebtoken");
 var createError = require("http-errors");
 const catchAsyncError = require("../utils/catchAsyncError");
 const AppError = require("../utils/appError");
-const {
-  sendResponse,
-  generateOtp,
-} = require("../utils/commonFunctions.js");
+const { sendResponse, generateOtp } = require("../utils/commonFunctions.js");
 const ServiceProvider = require("../models/serviceProviderModel");
 const { errorMessages } = require("../utils/messages");
-
 
 // extract user info from the token and pass user details to the next middleware
 exports.protect = catchAsyncError(async (req, res, next) => {
@@ -24,32 +20,30 @@ exports.protect = catchAsyncError(async (req, res, next) => {
 
   const { id } = jwt.verify(token, process.env.JWT_SECRET_KEY); // decode and get id
 
-
-  const userDetails = await ServiceProvider.findById(id).select('+otp +otpCreatedAt'); // change model name to the data required from
+  const userDetails = await ServiceProvider.findById(id).select(
+    "+otp +otpCreatedAt"
+  ); // change model name to the data required from
 
   req.user = userDetails; // save user details in variable
   next(); // pass in to the next controller
 });
 
-
 exports.signUp = catchAsyncError(async (req, res, next) => {
+  let user;
+  const { email, name, password, contact } = req.body;
 
-  let user
-  const { email, name, password, contact } = req.body
-
-  user = await ServiceProvider.findOne({ email })
+  user = await ServiceProvider.findOne({ email });
 
   if (!user) {
-    user = await ServiceProvider.findOne({ contact })
+    user = await ServiceProvider.findOne({ contact });
   }
-
 
   if (user) {
-    return next(new AppError(409, errorMessages.user.exists))
+    return next(new AppError(409, errorMessages.user.exists));
   }
 
-  const otp = generateOtp()
-  const otpCreatedAt = Date.now()
+  const otp = generateOtp();
+  const otpCreatedAt = Date.now();
 
   const userDetails = await ServiceProvider.create({
     email,
@@ -57,53 +51,46 @@ exports.signUp = catchAsyncError(async (req, res, next) => {
     contact,
     password,
     otp,
-    otpCreatedAt
-  })
+    otpCreatedAt,
+  });
 
+  delete userDetails._doc.password;
+  delete userDetails._doc.otp;
+  delete userDetails._doc.otpCreatedAt;
 
-  delete userDetails._doc.password
-  delete userDetails._doc.otp
-  delete userDetails._doc.otpCreatedAt
-
-
-
-  sendResponse(userDetails, 200, res, true)
-
-
+  sendResponse(userDetails, 200, res, true);
 });
 
-
 exports.signIn = catchAsyncError(async (req, res, next) => {
+  let user;
+  const { email, password } = req.body;
 
-  let user
-  const { email, password } = req.body
-
-  user = await ServiceProvider.findOne({ email })
-
+  user = await ServiceProvider.findOne({ email }).select("+password");
 
   if (!user) {
-    return next(new AppError(409, errorMessages.password.wrongPwd))
+    return next(new AppError(409, errorMessages.password.wrongPwd));
   }
 
   if (!(await user.checkPassword(password))) {
     return next(new AppError(409, errorMessages.password.wrongPwd));
   }
 
+  delete user._doc.password;
+  delete user._doc.otp;
+  delete user._doc.otpCreatedAt;
 
-  delete user._doc.password
-  delete user._doc.otp
-  delete user._doc.otpCreatedAt
-
-  sendResponse(user, 200, res, true)
+  sendResponse(user, 200, res, true);
 });
 
-
 exports.verifyOtp = catchAsyncError(async (req, res, next) => {
+  const { otp, otpCreatedAt } = req.user;
 
-  const { otp, otpCreatedAt } = req.user
-
-  if (Date.now() > new Date(`${otpCreatedAt}`).getTime() + 1000 * 60 * process.env.OTP_EXPIRES_IN) {
-    req.user.otp = ""
+  if (
+    Date.now() >
+    new Date(`${otpCreatedAt}`).getTime() +
+      1000 * 60 * process.env.OTP_EXPIRES_IN
+  ) {
+    req.user.otp = "";
     await req.user.save();
     return next(
       new AppError(
@@ -117,12 +104,15 @@ exports.verifyOtp = catchAsyncError(async (req, res, next) => {
     return next(new AppError(401, "Invalid OTP. Please try again"));
   }
 
-  let updatedUser
+  let updatedUser;
 
-  updatedUser = await ServiceProvider.findByIdAndUpdate(req.user._id, { isActive: true, otp: null }, { new: true })
+  updatedUser = await ServiceProvider.findByIdAndUpdate(
+    req.user._id,
+    { isActive: true, otp: null },
+    { new: true }
+  );
 
-  sendResponse(updatedUser, 200, res)
-
+  sendResponse(updatedUser, 200, res);
 });
 
 exports.forgetPassword = catchAsyncError(async (req, res, next) => {
@@ -151,12 +141,10 @@ exports.forgetPassword = catchAsyncError(async (req, res, next) => {
 exports.resetPassword = catchAsyncError(async (req, res, next) => {
   const { newPassword } = req.body;
 
-  const user = await ServiceProvider.findById(req.user._id);
+  const user = await ServiceProvider.findById(req.user._id).select("+password");
 
   if (await user.checkPasswordOnReset(newPassword, user.password)) {
-    return next(
-      new AppError(401, errorMessages.password.oldAndNewSame)
-    );
+    return next(new AppError(401, errorMessages.password.oldAndNewSame));
   }
 
   user.password = newPassword;
@@ -167,31 +155,31 @@ exports.resetPassword = catchAsyncError(async (req, res, next) => {
 
 exports.resendOtp = catchAsyncError(async (req, res, next) => {
   let user;
-  const { _id } = req.user
+  const { _id } = req.user;
   let otp = generateOtp();
   const smsText = `Your otp for forget password is: ${otp}`;
 
-  user = await ServiceProvider.findByIdAndUpdate(_id, { otp: otp, otpCreatedAt: Date.now() }, { new: true })
+  user = await ServiceProvider.findByIdAndUpdate(
+    _id,
+    { otp: otp, otpCreatedAt: Date.now() },
+    { new: true }
+  );
 
   sendResponse(user, 200, res, true);
-
-})
+});
 
 exports.changePassword = catchAsyncError(async (req, res, next) => {
-
-  const user = req.user
-  const { newPassword } = req.body
+  const user = await ServiceProvider.findById(req.user._id).select("+password");
+  const { newPassword } = req.body;
 
   if (await user.checkPasswordOnReset(newPassword, user.password)) {
-    return next(
-      new AppError(401, errorMessages.password.oldAndNewSame)
-    );
+    return next(new AppError(401, errorMessages.password.oldAndNewSame));
   }
 
   // send email for password change
 
-  user.password = newPassword
-  await user.save()
+  user.password = newPassword;
+  await user.save();
 
-  sendResponse(user, 200, res)
-})
+  sendResponse(user, 200, res);
+});

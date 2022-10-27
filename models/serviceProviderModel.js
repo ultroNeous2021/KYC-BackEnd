@@ -21,6 +21,7 @@ const ServiceProviderSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, errorMessages.password.empty],
+      select: false,
     },
     image: {
       type: String,
@@ -29,20 +30,26 @@ const ServiceProviderSchema = new mongoose.Schema(
     role: {
       type: String,
       default: "serviceProvider",
-      enum: ['admin', 'serviceProvider']
+      enum: ["admin", "serviceProvider"],
     },
-    favourites: {
+    favouriteReviews: {
       type: Array,
       default: [],
-      ref: "Review"
-    },
-    previousRatings: {
-      type: Array,
-      default: [],
-      ref: "Review"
+      ref: "Review",
     },
     reviews: {
       type: Array,
+      default: [],
+      ref: "Review",
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
+    favouriteCustomers: {
+      type: Array,
+      default: [],
+      ref: "Customer",
     },
     otp: {
       type: Number,
@@ -52,7 +59,7 @@ const ServiceProviderSchema = new mongoose.Schema(
     otpCreatedAt: {
       type: Date,
       default: null,
-      select: false
+      select: false,
     },
     isActive: {
       type: Boolean,
