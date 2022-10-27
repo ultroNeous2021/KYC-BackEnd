@@ -5,9 +5,8 @@ const { validateUserSignin, validateUserSignup, validateNewConfirmPassword } = r
 
 const router = express.Router();
 
-
-
 router.get('/getallcustomers', authController.protect, adminController.getAllCustomers)
 router.get('/getAllServiceProviders', authController.protect, adminController.getAllServiceProviders)
+router.post('/blockuser', authController.protect, adminController.blockUnblockUser)
 
 module.exports = router

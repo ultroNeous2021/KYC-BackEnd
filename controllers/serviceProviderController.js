@@ -128,7 +128,7 @@ exports.editReview = catchAsyncError(async (req, res, next) => {
 
     const totalQuestionsRatingValue = question0.value + question1.value + question2.value + question3.value + question4.value
 
-    console.log(reviewId);
+
 
     const reviewNew = await Review.findByIdAndUpdate(reviewId, {
         customerName: customerName,

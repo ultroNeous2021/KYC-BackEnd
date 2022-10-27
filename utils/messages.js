@@ -36,8 +36,8 @@ const errorMessages = {
         customer: "Please add a reveiw for the customer.",
         questions: `${empty} value for all questions.`,
         overallRating: `${empty} overall rating.`,
-        totalQuestionsRating: `${empty} total questions rating.`
-
+        totalQuestionsRating: `${empty} total questions rating.`,
+        userblock: `${empty} valid user id`
     }
 }
 
