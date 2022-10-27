@@ -12,10 +12,6 @@ const router = express.Router();
 router.get('/getallcustomers', authController.protect, adminController.getAllCustomers)
 router.get('/getAllServiceProviders', authController.protect, adminController.getAllServiceProviders)
 router.post('/blockuser', authController.protect, adminController.blockUnblockUser)
-router.post(
-  "/addQuestion",
-  authController.protect,
-  adminController.addQuestion
-);
+router.post("/addQuestion", authController.protect, adminController.addQuestion);
 
 module.exports = router;
