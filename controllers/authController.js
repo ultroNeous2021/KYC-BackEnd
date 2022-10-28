@@ -67,8 +67,14 @@ exports.signIn = catchAsyncError(async (req, res, next) => {
 
   user = await ServiceProvider.findOne({ email }).select("+password");
 
+
+
   if (!user) {
     return next(new AppError(409, errorMessages.password.wrongPwd));
+  }
+
+  if (user.isActive) {
+    return next(new AppError(409, errorMessages.user.blocked));
   }
 
   if (!(await user.checkPassword(password))) {
@@ -88,7 +94,7 @@ exports.verifyOtp = catchAsyncError(async (req, res, next) => {
   if (
     Date.now() >
     new Date(`${otpCreatedAt}`).getTime() +
-      1000 * 60 * process.env.OTP_EXPIRES_IN
+    1000 * 60 * process.env.OTP_EXPIRES_IN
   ) {
     req.user.otp = "";
     await req.user.save();

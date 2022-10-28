@@ -4,6 +4,7 @@ const errorMessages = {
   user: {
     exists: "User already exists with this contact number or email.",
     notExists: "No user exist with this email.",
+    blocked: "Your account is has been suspended. Kindly contact admin."
   },
   name: {
     empty: `${empty} name.`

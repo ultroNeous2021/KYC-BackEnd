@@ -15,7 +15,8 @@ exports.getAllCustomers = catchAsyncError(async (req, res, next) => {
 });
 
 exports.getAllServiceProviders = catchAsyncError(async (req, res, next) => {
-  const serviceProviders = await ServiceProvider.find().sort("-updatedAt");
+  let currentUser = req.user._id;
+  const serviceProviders = await ServiceProvider.find({ "_id": { "$ne": currentUser } }).sort("-updatedAt");
 
   sendResponse(serviceProviders, 200, res);
 });
