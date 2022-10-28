@@ -114,7 +114,7 @@ exports.verifyOtp = catchAsyncError(async (req, res, next) => {
 
   updatedUser = await ServiceProvider.findByIdAndUpdate(
     req.user._id,
-    { isActive: true, otp: null },
+    { otp: null },
     { new: true }
   );
 
