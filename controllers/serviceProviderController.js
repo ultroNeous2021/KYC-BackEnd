@@ -101,12 +101,12 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
       ),
       totalQuestionsRating: twoDecimalVals(
         (customer.totalQuestionsRating + totalQuestionsRatingValue) /
-          lengthOfTotalReviews
+        lengthOfTotalReviews
       ),
       overallRating: twoDecimalVals(
         (customer.overallRating +
           (totalQuestionsRatingValue + starsRating) / 2) /
-          lengthOfTotalReviews
+        lengthOfTotalReviews
       ),
       question0: {
         questionId: question0.id,
@@ -262,12 +262,19 @@ exports.editReview = catchAsyncError(async (req, res, next) => {
 
 exports.deleteReview = catchAsyncError(async (req, res, next) => {
   const { id } = req.body;
-
-  const reviewNew = await Review.findByIdAndUpdate(
-    id,
-    { isActive: false },
-    { new: true }
-  );
+  // const reviewNew = await Review.findByIdAndUpdate(
+  //   id,
+  //   { isActive: false },
+  //   { new: true }
+  // );
+  const reviewNew = await Review.findOneAndUpdate(
+    { _id: id },
+    { isActive: false, new: true }, (e) => {
+      if (!e) {
+        console.log("Deleted");
+      }
+    }
+  ).clone()
 
   sendResponseValue(res, reviewNew);
 });

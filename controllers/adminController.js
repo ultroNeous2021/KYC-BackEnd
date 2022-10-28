@@ -17,7 +17,7 @@ exports.getAllCustomers = catchAsyncError(async (req, res, next) => {
     users = await Customer.findById(id)
       .populate({
         path: "reviews",
-        select: "review overallRating",
+        select: "review overallRating isActive",
         populate: {
           path: "serviceProviderId",
           select: "name",
