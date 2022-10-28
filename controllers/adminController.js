@@ -43,7 +43,7 @@ exports.getAllServiceProviders = catchAsyncError(async (req, res, next) => {
     users = await ServiceProvider.findById(id)
       .populate({
         path: "reviews",
-        select: "review overallRating",
+        select: "review overallRating isActive",
         populate: {
           path: "customerId",
           select: "name",
