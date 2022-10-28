@@ -71,52 +71,62 @@ exports.addQuestion = catchAsyncError(async (req, res, next) => {
 });
 
 exports.blockUnblockUser = catchAsyncError(async (req, res, next) => {
-  const { userId } = req.body;
-
+  const { userId, type } = req.body;
+  console.log(userId)
   if (!mongoose.isValidObjectId(userId)) {
     return next(new AppError(401, errorMessages.other.userblock));
   }
+  if (type == "customer") {
+    const checkBlocking = await Customer.findOne({ _id: userId });
+    const updatedData = await Customer.findByIdAndUpdate(
+      { _id: userId },
+      { isActive: !checkBlocking.isActive }
+    );
+    sendResponse(updatedData, 200, res);
+  } else {
+    const checkBlocking = await ServiceProvider.findOne({ _id: userId });
+    const updatedData = await ServiceProvider.findByIdAndUpdate(
+      { _id: userId },
+      { isActive: !checkBlocking.isActive }
+    );
+    sendResponse(updatedData, 200, res);
+  }
 
-  const checkBlocking = await ServiceProvider.findOne({ _id: userId });
-  const updatedData = await ServiceProvider.findByIdAndUpdate(
-    { _id: userId },
-    { isActive: !checkBlocking.isActive }
-  );
-
-  sendResponse(updatedData, 200, res);
 });
 
 exports.search = catchAsyncError(async (req, res, next) => {
   const { searchText, searchField } = req.body;
-
+  let currentUser = req.user._id;
   let Model = Customer;
   if (searchField && searchField === "ServiceProvider") {
     Model = ServiceProvider;
   }
-
   const results = await Model.find({
-    $or: [
-      {
-        name: {
-          $regex: searchText,
-          $options: "i",
+    $and: [{
+      $or: [
+        {
+          name: {
+            $regex: searchText,
+            $options: "i",
+          },
         },
-      },
-      {
-        email: {
-          $regex: searchText,
-          $options: "i",
+        {
+          email: {
+            $regex: searchText,
+            $options: "i",
+          },
         },
-      },
-      {
-        contact: {
-          $regex: searchText,
-          $options: "i",
+        {
+          contact: {
+            $regex: searchText,
+            $options: "i",
+          },
         },
-      },
-    ],
+      ]
+    }, { _id: { $ne: currentUser } }]
+
   })
-    .select("name email contact")
+    .select("name email contact isActive")
     .limit(5);
 
   sendResponse(results, 200, res);

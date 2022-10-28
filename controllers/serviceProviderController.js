@@ -269,11 +269,7 @@ exports.deleteReview = catchAsyncError(async (req, res, next) => {
   // );
   const reviewNew = await Review.findOneAndUpdate(
     { _id: id },
-    { isActive: false, new: true }, (e) => {
-      if (!e) {
-        console.log("Deleted");
-      }
-    }
+    { isActive: false, new: true }
   ).clone()
 
   sendResponseValue(res, reviewNew);
