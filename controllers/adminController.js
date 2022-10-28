@@ -72,7 +72,6 @@ exports.addQuestion = catchAsyncError(async (req, res, next) => {
 
 exports.blockUnblockUser = catchAsyncError(async (req, res, next) => {
   const { userId, type } = req.body;
-  console.log(userId)
   if (!mongoose.isValidObjectId(userId)) {
     return next(new AppError(401, errorMessages.other.userblock));
   }
