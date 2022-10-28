@@ -178,8 +178,6 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
 
   const reviewNew = await Review.create(newReviewData);
 
-  console.log(customerVal);
-
   // add review to the array of customer
   await Customer.findByIdAndUpdate(
     customerVal._id,
@@ -204,54 +202,79 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
 });
 
 exports.editReview = catchAsyncError(async (req, res, next) => {
+  const {
+    reviewId,
+    customerName,
+    customerEmail,
+    customerContact,
+    starsRating,
+    question0,
+    question1,
+    question2,
+    question3,
+    question4,
+    review,
+  } = req.body;
 
-  const { reviewId, customerName, customerEmail, customerContact, starsRating, question0, question1, question2, question3, question4, review } = req.body
+  const totalQuestionsRatingValue =
+    question0.value +
+    question1.value +
+    question2.value +
+    question3.value +
+    question4.value;
 
-  const totalQuestionsRatingValue = question0.value + question1.value + question2.value + question3.value + question4.value
-
-
-
-  const reviewNew = await Review.findByIdAndUpdate(reviewId, {
-    customerName: customerName,
-    customerEmail: customerEmail,
-    customerContact: customerContact,
-    starsRating: parseInt(starsRating),
-    overallRating: parseInt(totalQuestionsRatingValue + starsRating),
-    totalQuestionsRating: parseInt(totalQuestionsRatingValue),
-    question0: {
-      questionId: question0.id,
-      value: question0.value
+  const reviewNew = await Review.findByIdAndUpdate(
+    reviewId,
+    {
+      customerName: customerName,
+      customerEmail: customerEmail,
+      customerContact: customerContact,
+      starsRating: parseInt(starsRating),
+      overallRating: parseInt(totalQuestionsRatingValue + starsRating),
+      totalQuestionsRating: parseInt(totalQuestionsRatingValue),
+      question0: {
+        questionId: question0.id,
+        value: question0.value,
+      },
+      question1: {
+        questionId: question1.id,
+        value: question1.value,
+      },
+      question2: {
+        questionId: question2.id,
+        value: question2.value,
+      },
+      question3: {
+        questionId: question3.id,
+        value: question3.value,
+      },
+      question4: {
+        questionId: question4.id,
+        value: question4.value,
+      },
+      review,
     },
-    question1: {
-      questionId: question1.id,
-      value: question1.value
-    }, question2: {
-      questionId: question2.id,
-      value: question2.value
-    }, question3: {
-      questionId: question3.id,
-      value: question3.value
-    }, question4: {
-      questionId: question4.id,
-      value: question4.value
-    },
-    review
-  }, { new: true })
+    { new: true }
+  );
 
-
-  sendResponseValue(res, reviewNew)
-
-
-})
+  sendResponseValue(res, reviewNew);
+});
 
 exports.deleteReview = catchAsyncError(async (req, res, next) => {
   const { id } = req.body;
-
-  const reviewNew = await Review.findByIdAndUpdate(
-    id,
-    { isActive: false },
-    { new: true }
-  );
+  // const reviewNew = await Review.findByIdAndUpdate(
+  //   id,
+  //   { isActive: false },
+  //   { new: true }
+  // );
+  const reviewNew = await Review.findOneAndUpdate(
+    { _id: id },
+    { isActive: false, new: true }, (e) => {
+      if (!e) {
+        console.log("Deleted");
+      }
+    }
+  ).clone()
 
   sendResponseValue(res, reviewNew);
 });
@@ -301,8 +324,6 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
     .skip(pageOptions.page)
     .limit(pageOptions.limit)
     .sort("-updatedAt");
-
-  console.log(previousRatings);
 
   previousRatings = previousRatings.map((el) =>
     favourites.includes(el._id)
