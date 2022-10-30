@@ -101,12 +101,12 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
       ),
       totalQuestionsRating: twoDecimalVals(
         (customer.totalQuestionsRating + totalQuestionsRatingValue) /
-        lengthOfTotalReviews
+          lengthOfTotalReviews
       ),
       overallRating: twoDecimalVals(
         (customer.overallRating +
           (totalQuestionsRatingValue + starsRating) / 2) /
-        lengthOfTotalReviews
+          lengthOfTotalReviews
       ),
       question0: {
         questionId: question0.id,
@@ -270,7 +270,7 @@ exports.deleteReview = catchAsyncError(async (req, res, next) => {
   const reviewNew = await Review.findOneAndUpdate(
     { _id: id },
     { isActive: false, new: true }
-  ).clone()
+  ).clone();
 
   sendResponseValue(res, reviewNew);
 });
@@ -309,17 +309,19 @@ exports.addToFavourites = catchAsyncError(async (req, res, next) => {
 exports.previousRatings = catchAsyncError(async (req, res, next) => {
   const favourites = req.user.favouriteReviews;
 
+  const { page, limit } = req.body;
+
   const pageOptions = {
-    page: parseInt(req.query.page) || 0,
-    limit: parseInt(req.query.limit) || 10,
+    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 10),
+    limitVal: parseInt(limit) || 10,
   };
 
   let previousRatings = await Review.find({
     serviceProviderId: req.user._id,
   })
-    .skip(pageOptions.page)
-    .limit(pageOptions.limit)
-    .sort("-updatedAt");
+    .sort("-updatedAt")
+    .skip(pageOptions.skipVal)
+    .limit(pageOptions.limitVal);
 
   previousRatings = previousRatings.map((el) =>
     favourites.includes(el._id)
