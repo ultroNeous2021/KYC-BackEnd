@@ -283,31 +283,31 @@ exports.myReviews = catchAsyncError(async (req, res, next) => {
   sendResponse(reviews, 200, res);
 });
 
-exports.addToFavourites = catchAsyncError(async (req, res, next) => {
-  const { id } = req.body;
-  const { favouriteReviews } = req.user;
+// exports.addToFavourites = catchAsyncError(async (req, res, next) => {
+//   const { id } = req.body;
+//   const { favouriteReviews } = req.user;
 
-  let newFavourites;
+//   let newFavourites;
 
-  if (favouriteReviews.includes(id)) {
-    newFavourites = favouriteReviews.filter((el) => el !== id);
-  } else {
-    newFavourites = [...favouriteReviews, id];
-  }
+//   if (favouriteReviews.includes(id)) {
+//     newFavourites = favouriteReviews.filter((el) => el !== id);
+//   } else {
+//     newFavourites = [...favouriteReviews, id];
+//   }
 
-  let reviews = await ServiceProvider.findByIdAndUpdate(
-    req.user._id,
-    { favouriteReviews: newFavourites },
-    { new: true }
-  ).populate("favouriteReviews", "customerName starsRating");
+//   let reviews = await ServiceProvider.findByIdAndUpdate(
+//     req.user._id,
+//     { favouriteReviews: newFavourites },
+//     { new: true }
+//   ).populate("favouriteReviews", "customerName starsRating");
 
-  reviews = reviews.favouriteReviews;
+//   reviews = reviews.favouriteReviews;
 
-  sendResponse(reviews, 200, res);
-});
+//   sendResponse(reviews, 200, res);
+// });
 
 exports.previousRatings = catchAsyncError(async (req, res, next) => {
-  const favourites = req.user.favouriteReviews;
+  const favourites = req.user.favouriteCustomers;
 
   const { page, limit } = req.body;
 
@@ -320,11 +320,12 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
     serviceProviderId: req.user._id,
   })
     .sort("-updatedAt")
+    .select("name overallRating review customerId")
     .skip(pageOptions.skipVal)
     .limit(pageOptions.limitVal);
 
   previousRatings = previousRatings.map((el) =>
-    favourites.includes(el._id)
+    favourites.includes(el.customerId)
       ? { ...el._doc, isFavourite: true }
       : { ...el._doc, isFavourite: false }
   );
@@ -346,7 +347,14 @@ exports.getCustomerDetails = catchAsyncError(async (req, res, next) => {
   const populateString = `question0.questionId question1.questionId question2.questionId question3.questionId question4.questionId`;
 
   const customer = await Customer.findById(id)
-    .populate("reviews", "serviceProviderName review updatedAt overallRating")
+    .populate({
+      path: "reviews",
+      select: "review updatedAt overallRating",
+      populate: {
+        path: "serviceProviderId",
+        select: "name -_id",
+      },
+    })
     .populate(populateString, "_id title details");
 
   sendResponse(customer, 200, res);
@@ -414,20 +422,33 @@ exports.search = catchAsyncError(async (req, res, next) => {
       },
     ],
   })
-    .select("name")
+    .select("name overallRating totalReviews")
     .limit(5);
 
   sendResponse(results, 200, res);
 });
 
+exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
+  const favourites = await ServiceProvider.findById(req.user._id)
+    .populate({
+      path: "favouriteCustomers",
+      select: "name email contact",
+    })
+    .agrea.select("name");
+
+  sendResponse(favourites, 200, res);
+});
+
 exports.homeScreen = catchAsyncError(async (req, res, next) => {
   let data = await ServiceProvider.findById(req.user._id)
     .populate({
-      path: "favouriteReviews reviews",
+      path: "reviews favouriteCustomers",
       options: { perDocumentLimit: 10 },
-      select: "customerName overallRating review updatedAt totalReviews",
+      select: "customerName overallRating review updatedAt totalReviews name ",
     })
     .sort("-updatedAt");
+
+  delete data._doc.favouriteReviews;
 
   sendResponse(data, 200, res);
 });

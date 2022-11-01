@@ -6,6 +6,7 @@ const ServiceProvider = require("../models/serviceProviderModel");
 const mongoose = require("mongoose");
 const AppError = require("../utils/appError");
 const { errorMessages } = require("../utils/messages");
+const Question = require("../models/questionModel");
 
 exports.getAllCustomers = catchAsyncError(async (req, res, next) => {
   const { id } = req.body;
@@ -67,20 +68,23 @@ exports.addQuestion = catchAsyncError(async (req, res, next) => {
     details,
   });
 
-  sendResponse(serviceProviders, 200, res);
+  sendResponse(question, 200, res);
 });
 
 exports.blockUnblockUser = catchAsyncError(async (req, res, next) => {
   const { userId, type } = req.body;
+
   if (!mongoose.isValidObjectId(userId)) {
     return next(new AppError(401, errorMessages.other.userblock));
   }
+
   if (type == "customer") {
     const checkBlocking = await Customer.findOne({ _id: userId });
     const updatedData = await Customer.findByIdAndUpdate(
       { _id: userId },
       { isActive: !checkBlocking.isActive }
     );
+
     sendResponse(updatedData, 200, res);
   } else {
     const checkBlocking = await ServiceProvider.findOne({ _id: userId });
@@ -90,7 +94,6 @@ exports.blockUnblockUser = catchAsyncError(async (req, res, next) => {
     );
     sendResponse(updatedData, 200, res);
   }
-
 });
 
 exports.search = catchAsyncError(async (req, res, next) => {
@@ -101,29 +104,31 @@ exports.search = catchAsyncError(async (req, res, next) => {
     Model = ServiceProvider;
   }
   const results = await Model.find({
-    $and: [{
-      $or: [
-        {
-          name: {
-            $regex: searchText,
-            $options: "i",
+    $and: [
+      {
+        $or: [
+          {
+            name: {
+              $regex: searchText,
+              $options: "i",
+            },
           },
-        },
-        {
-          email: {
-            $regex: searchText,
-            $options: "i",
+          {
+            email: {
+              $regex: searchText,
+              $options: "i",
+            },
           },
-        },
-        {
-          contact: {
-            $regex: searchText,
-            $options: "i",
+          {
+            contact: {
+              $regex: searchText,
+              $options: "i",
+            },
           },
-        },
-      ]
-    }, { _id: { $ne: currentUser } }]
-
+        ],
+      },
+      { _id: { $ne: currentUser } },
+    ],
   })
     .select("name email contact isActive")
     .limit(5);

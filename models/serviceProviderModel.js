@@ -32,11 +32,6 @@ const ServiceProviderSchema = new mongoose.Schema(
       default: "serviceProvider",
       enum: ["admin", "serviceProvider"],
     },
-    favouriteReviews: {
-      type: Array,
-      default: [],
-      ref: "Review",
-    },
     reviews: {
       type: Array,
       default: [],

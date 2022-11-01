@@ -44,12 +44,8 @@ router.post(
   authController.protect,
   serviceProviderController.deleteReview
 );
+
 router.post(
-  "/addToFavourites",
-  authController.protect,
-  serviceProviderController.addToFavourites
-);
-router.get(
   "/previousRatings",
   authController.protect,
   serviceProviderController.previousRatings
@@ -83,6 +79,11 @@ router.post(
   authController.protect,
   serviceProviderController.search
 );
+router.post(
+  "/searchFavouriteCustomers",
+  authController.protect,
+  serviceProviderController.searchFavouriteCustomers
+);
 router.get(
   "/homeScreen",
   authController.protect,
@@ -98,5 +99,11 @@ router.post(
   authController.protect,
   serviceProviderController.getCustomerDetails
 );
+
+// router.post(
+//   "/addToFavourites",
+//   authController.protect,
+//   serviceProviderController.addToFavourites
+// );
 
 module.exports = router;
