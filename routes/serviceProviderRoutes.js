@@ -39,11 +39,6 @@ router.post(
   authController.protect,
   serviceProviderController.editReview
 );
-router.post(
-  "/deleteReview",
-  authController.protect,
-  serviceProviderController.deleteReview
-);
 
 router.post(
   "/previousRatings",
@@ -79,11 +74,11 @@ router.post(
   authController.protect,
   serviceProviderController.search
 );
-router.post(
-  "/searchFavouriteCustomers",
-  authController.protect,
-  serviceProviderController.searchFavouriteCustomers
-);
+// router.post(
+//   "/searchFavouriteCustomers",
+//   authController.protect,
+//   serviceProviderController.searchFavouriteCustomers
+// );
 router.get(
   "/homeScreen",
   authController.protect,

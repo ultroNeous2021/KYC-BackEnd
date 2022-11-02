@@ -135,3 +135,96 @@ exports.search = catchAsyncError(async (req, res, next) => {
 
   sendResponse(results, 200, res);
 });
+
+exports.deleteReview = catchAsyncError(async (req, res, next) => {
+  const { id } = req.body;
+
+  const review = await Review.findByIdAndUpdate(
+    id,
+    { isActive: false },
+    { new: true }
+  ).populate({
+    path: "customerId",
+    select: "reviews",
+    populate: {
+      path: "reviews",
+      select:
+        "question0 question1 question2 question3 question4 overallRating starsRating totalQuestionsRating",
+    },
+  });
+
+  let updatedReviewList = review.customerId.reviews.filter(
+    (el) => `${el._id}` !== id
+  );
+
+  let updatedReviewArr = updatedReviewList.map((el) => el._id);
+
+  let updatedReviewListLength = updatedReviewList.length;
+
+  let valuesToBeUpdated = {
+    totalQuestionsRating: 0,
+    overallRating: 0,
+    starsRating: 0,
+    totalReviews: 0,
+    reviews: [],
+  };
+
+  if (updatedReviewListLength > 0) {
+    // TotalQuesRat = (q1 + q2 + q4 + q5) + (q1 + q2 + q3 + q4 + q5) + ..... / Total No. of reviews
+    valuesToBeUpdated.totalQuestionsRating =
+      (
+        updatedReviewList
+          .map(
+            (el) =>
+              el.question0.value +
+              el.question1.value +
+              el.question2.value +
+              el.question3.value +
+              el.question4.value
+          )
+          .reduce((a, b) => a + b) / updatedReviewListLength
+      ).toFixed(1) * 1;
+
+    valuesToBeUpdated.starsRating =
+      (
+        updatedReviewList.map((el) => el.starsRating).reduce((a, b) => a + b) /
+        updatedReviewListLength
+      ).toFixed(1) * 1;
+
+    valuesToBeUpdated.overallRating =
+      (
+        (valuesToBeUpdated.totalQuestionsRating +
+          valuesToBeUpdated.starsRating) /
+        2
+      ).toFixed(1) * 1;
+
+    valuesToBeUpdated.reviews = updatedReviewArr;
+    valuesToBeUpdated.totalReviews = updatedReviewListLength;
+  }
+
+  const updatedCustomer = await Customer.findByIdAndUpdate(
+    review.customerId,
+    valuesToBeUpdated
+  );
+
+  const serviceProviderVal = await ServiceProvider.findById(
+    review.serviceProviderId
+  );
+
+  let updatedServiceProvider = serviceProviderVal.reviews.filter(
+    (el) => `${el}` !== id
+  );
+
+  let updatedServiceProviderLength = updatedServiceProvider.length;
+
+  updatedServiceProvider = await ServiceProvider.findByIdAndUpdate(
+    serviceProviderVal,
+    {
+      reviews: updatedServiceProvider,
+      totalReviews: updatedServiceProviderLength,
+    },
+    { new: true }
+  );
+
+  sendResponse(valuesToBeUpdated, 200, res);
+});

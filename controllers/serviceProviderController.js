@@ -88,7 +88,7 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
       ],
     });
 
-    if (checkIfReviewExists) {
+    if (checkIfReviewExists && checkIfReviewExists.isActive) {
       return next(new AppError(400, errorMessages.review.reviewExists));
     }
 
@@ -193,7 +193,7 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
     req.user._id,
     {
       reviews: [...req.user.reviews, reviewNew._id],
-      totalReviews: parseInt(customerVal.totalReviews) + 1,
+      totalReviews: parseInt(customerVal.totalReviews),
     },
     { new: true }
   );
@@ -256,21 +256,6 @@ exports.editReview = catchAsyncError(async (req, res, next) => {
     },
     { new: true }
   );
-
-  sendResponseValue(res, reviewNew);
-});
-
-exports.deleteReview = catchAsyncError(async (req, res, next) => {
-  const { id } = req.body;
-  // const reviewNew = await Review.findByIdAndUpdate(
-  //   id,
-  //   { isActive: false },
-  //   { new: true }
-  // );
-  const reviewNew = await Review.findOneAndUpdate(
-    { _id: id },
-    { isActive: false, new: true }
-  ).clone();
 
   sendResponseValue(res, reviewNew);
 });
@@ -428,22 +413,22 @@ exports.search = catchAsyncError(async (req, res, next) => {
   sendResponse(results, 200, res);
 });
 
-exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
-  const favourites = await ServiceProvider.findById(req.user._id)
-    .populate({
-      path: "favouriteCustomers",
-      select: "name email contact",
-    })
-    .agrea.select("name");
+// exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
+//   const favourites = await ServiceProvider.findById(req.user._id)
+//     .populate({
+//       path: "favouriteCustomers",
+//       select: "name email contact",
+//     })
+//     .agrea.select("name");
 
-  sendResponse(favourites, 200, res);
-});
+//   sendResponse(favourites, 200, res);
+// });
 
 exports.homeScreen = catchAsyncError(async (req, res, next) => {
   let data = await ServiceProvider.findById(req.user._id)
     .populate({
       path: "reviews favouriteCustomers",
-      options: { perDocumentLimit: 10 },
+      options: { perDocumentLimit: 5 },
       select: "customerName overallRating review updatedAt totalReviews name ",
     })
     .sort("-updatedAt");
