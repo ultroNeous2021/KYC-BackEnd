@@ -74,11 +74,6 @@ router.post(
   authController.protect,
   serviceProviderController.search
 );
-// router.post(
-//   "/searchFavouriteCustomers",
-//   authController.protect,
-//   serviceProviderController.searchFavouriteCustomers
-// );
 router.get(
   "/homeScreen",
   authController.protect,
@@ -90,9 +85,19 @@ router.post(
   serviceProviderController.addToFavouriteCustomer
 );
 router.post(
+  "/getFavouriteCustomer",
+  authController.protect,
+  serviceProviderController.getFavouriteCustomer
+);
+router.post(
   "/getCustomerDetails",
   authController.protect,
   serviceProviderController.getCustomerDetails
+);
+router.post(
+  "/searchFavouriteCustomers",
+  authController.protect,
+  serviceProviderController.searchFavouriteCustomers
 );
 
 // router.post(

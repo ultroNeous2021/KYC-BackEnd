@@ -268,29 +268,6 @@ exports.myReviews = catchAsyncError(async (req, res, next) => {
   sendResponse(reviews, 200, res);
 });
 
-// exports.addToFavourites = catchAsyncError(async (req, res, next) => {
-//   const { id } = req.body;
-//   const { favouriteReviews } = req.user;
-
-//   let newFavourites;
-
-//   if (favouriteReviews.includes(id)) {
-//     newFavourites = favouriteReviews.filter((el) => el !== id);
-//   } else {
-//     newFavourites = [...favouriteReviews, id];
-//   }
-
-//   let reviews = await ServiceProvider.findByIdAndUpdate(
-//     req.user._id,
-//     { favouriteReviews: newFavourites },
-//     { new: true }
-//   ).populate("favouriteReviews", "customerName starsRating");
-
-//   reviews = reviews.favouriteReviews;
-
-//   sendResponse(reviews, 200, res);
-// });
-
 exports.previousRatings = catchAsyncError(async (req, res, next) => {
   const favourites = req.user.favouriteCustomers;
 
@@ -305,7 +282,6 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
     serviceProviderId: req.user._id,
   })
     .sort("-updatedAt")
-    .select("name overallRating review customerId")
     .skip(pageOptions.skipVal)
     .limit(pageOptions.limitVal);
 
@@ -413,23 +389,13 @@ exports.search = catchAsyncError(async (req, res, next) => {
   sendResponse(results, 200, res);
 });
 
-// exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
-//   const favourites = await ServiceProvider.findById(req.user._id)
-//     .populate({
-//       path: "favouriteCustomers",
-//       select: "name email contact",
-//     })
-//     .agrea.select("name");
-
-//   sendResponse(favourites, 200, res);
-// });
-
 exports.homeScreen = catchAsyncError(async (req, res, next) => {
   let data = await ServiceProvider.findById(req.user._id)
     .populate({
       path: "reviews favouriteCustomers",
       options: { perDocumentLimit: 5 },
-      select: "customerName overallRating review updatedAt totalReviews name ",
+      select:
+        "customerName overallRating review updatedAt totalReviews name customerId",
     })
     .sort("-updatedAt");
 
@@ -439,7 +405,7 @@ exports.homeScreen = catchAsyncError(async (req, res, next) => {
 });
 
 exports.addToFavouriteCustomer = catchAsyncError(async (req, res, next) => {
-  const { id, rating } = req.body;
+  const { id } = req.body;
 
   const { favouriteCustomers } = req.user;
 
@@ -465,3 +431,64 @@ exports.addToFavouriteCustomer = catchAsyncError(async (req, res, next) => {
 
   sendResponse(favouriteCustomersReviews, 200, res);
 });
+
+exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
+  const { rating, page, limit } = req.body;
+
+  const pageOptions = {
+    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+    limitVal: parseInt(limit) || 5,
+  };
+
+  let customers = await ServiceProvider.findById(req.user._id)
+    .populate("favouriteCustomers", "overallRating name totalReviews")
+    .sort("-updatedAt")
+    .select("favouriteCustomers")
+    .skip(pageOptions.skipVal)
+    .limit(pageOptions.limitVal);
+
+  if (rating) {
+    customers = customers.favouriteCustomers.filter(
+      (el) => Math.floor(el.overallRating) === parseInt(rating)
+    );
+  }
+
+  sendResponse(customers, 200, res);
+});
+
+exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
+  const { searchText } = req.body;
+
+  const favourites = await ServiceProvider.findById(req.user._id)
+    .populate({
+      path: "favouriteCustomers",
+      select: "name email contact overallRating totalReviews",
+      match: {},
+    })
+    .select("favouriteCustomers");
+
+  sendResponse(favourites, 200, res);
+});
+
+// exports.addToFavourites = catchAsyncError(async (req, res, next) => {
+//   const { id } = req.body;
+//   const { favouriteReviews } = req.user;
+
+//   let newFavourites;
+
+//   if (favouriteReviews.includes(id)) {
+//     newFavourites = favouriteReviews.filter((el) => el !== id);
+//   } else {
+//     newFavourites = [...favouriteReviews, id];
+//   }
+
+//   let reviews = await ServiceProvider.findByIdAndUpdate(
+//     req.user._id,
+//     { favouriteReviews: newFavourites },
+//     { new: true }
+//   ).populate("favouriteReviews", "customerName starsRating");
+
+//   reviews = reviews.favouriteReviews;
+
+//   sendResponse(reviews, 200, res);
+// });
