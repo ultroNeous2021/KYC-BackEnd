@@ -99,6 +99,11 @@ router.post(
   authController.protect,
   serviceProviderController.searchFavouriteCustomers
 );
+router.post(
+  "/searchPreviousRatings",
+  authController.protect,
+  serviceProviderController.searchPreviousRatings
+);
 
 // router.post(
 //   "/addToFavourites",

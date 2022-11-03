@@ -274,8 +274,8 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
   const { page, limit } = req.body;
 
   const pageOptions = {
-    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 10),
-    limitVal: parseInt(limit) || 10,
+    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+    limitVal: parseInt(limit) || 5,
   };
 
   let previousRatings = await Review.find({
@@ -457,15 +457,95 @@ exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
 });
 
 exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
-  const { searchText } = req.body;
+  const { searchText, rating, page, limit } = req.body;
+
+  let ratingVal = rating * 1 || 1;
+  let searchVal = searchText || "";
+
+  const pageOptions = {
+    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+    limitVal: parseInt(limit) || 5,
+  };
 
   const favourites = await ServiceProvider.findById(req.user._id)
     .populate({
       path: "favouriteCustomers",
       select: "name email contact overallRating totalReviews",
-      match: {},
+      match: {
+        $or: [
+          {
+            name: {
+              $regex: searchVal,
+              $options: "i",
+            },
+          },
+          {
+            email: {
+              $regex: searchVal,
+              $options: "i",
+            },
+          },
+          {
+            contact: {
+              $regex: searchVal,
+              $options: "i",
+            },
+          },
+        ],
+        overallRating: {
+          $gte: ratingVal,
+        },
+      },
     })
-    .select("favouriteCustomers");
+    .select("favouriteCustomers")
+    .skip(pageOptions.skipVal)
+    .limit(pageOptions.limitVal);
+
+  sendResponse(favourites, 200, res);
+});
+exports.searchPreviousRatings = catchAsyncError(async (req, res, next) => {
+  const { searchText, rating, page, limit } = req.body;
+
+  let ratingVal = rating * 1 || 1;
+  let searchVal = searchText || "";
+
+  const pageOptions = {
+    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+    limitVal: parseInt(limit) || 5,
+  };
+
+  const favouriteReviews = req.user.favouriteCustomers;
+
+  const favourites = await Review.find({
+    isActive: true,
+    $or: [
+      {
+        name: {
+          $regex: searchVal,
+          $options: "i",
+        },
+      },
+      {
+        email: {
+          $regex: searchVal,
+          $options: "i", 
+        },
+      },
+      {
+        contact: {
+          $regex: searchVal,
+          $options: "i",
+        },
+      },
+    ],
+    overallRating: {
+      $gte: ratingVal,
+    },
+  })
+    .sort("-updatedAt")
+    .select("customerName overallRating review")
+    .skip(pageOptions.skipVal)
+    .limit(pageOptions.limitVal);
 
   sendResponse(favourites, 200, res);
 });
