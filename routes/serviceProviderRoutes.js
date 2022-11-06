@@ -40,7 +40,7 @@ router.post(
   serviceProviderController.editReview
 );
 
-router.post(
+router.get(
   "/previousRatings",
   authController.protect,
   serviceProviderController.previousRatings
@@ -84,7 +84,7 @@ router.post(
   authController.protect,
   serviceProviderController.addToFavouriteCustomer
 );
-router.post(
+router.get(
   "/getFavouriteCustomer",
   authController.protect,
   serviceProviderController.getFavouriteCustomer
@@ -94,16 +94,11 @@ router.post(
   authController.protect,
   serviceProviderController.getCustomerDetails
 );
-router.post(
-  "/searchFavouriteCustomers",
-  authController.protect,
-  serviceProviderController.searchFavouriteCustomers
-);
-router.post(
-  "/searchPreviousRatings",
-  authController.protect,
-  serviceProviderController.searchPreviousRatings
-);
+// router.post(
+//   "/searchFavouriteCustomers",
+//   authController.protect,
+//   serviceProviderController.searchFavouriteCustomers
+// );
 
 // router.post(
 //   "/addToFavourites",

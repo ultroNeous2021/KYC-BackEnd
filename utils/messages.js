@@ -35,9 +35,8 @@ const errorMessages = {
     customerInvalidId: `${empty}the customer id`,
     customer: "Please add a reveiw for the customer.",
     questions: `${empty} value for all questions.`,
-    overallRating: `${empty} overall rating.`,
-    totalQuestionsRating: `${empty} total questions rating.`,
     userblock: `${empty} valid user id`,
+    startsRating: `${empty} stars rating.`,
   },
   review: {
     reviewExists: "You have already added a review for this customer",

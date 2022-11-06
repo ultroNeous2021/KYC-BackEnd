@@ -7,6 +7,7 @@ const sharp = require("sharp");
 const AppError = require("../utils/appError");
 const { errorMessages } = require("../utils/messages");
 const Question = require("../models/questionModel");
+const { default: mongoose } = require("mongoose");
 
 const sendResponseValue = (res, data) => {
   res.status(200).json({
@@ -14,10 +15,6 @@ const sendResponseValue = (res, data) => {
       ...data._doc,
     },
   });
-};
-
-const twoDecimalVals = (num) => {
-  return parseFloat(num).toFixed(2);
 };
 
 exports.addReview = catchAsyncError(async (req, res, next) => {
@@ -35,46 +32,87 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
     customerId,
   } = req.body;
 
-  const totalQuestionsRatingValue =
-    question0.value +
-    question1.value +
-    question2.value +
-    question3.value +
-    question4.value;
+  const twoDecimalVals = (num) => {
+    return parseFloat(num).toFixed(2) * 1;
+  };
+
+  const getStarsRating = (val) => {
+    const numVal = val * 1;
+    const mainVal = Math.floor(val);
+    const pointVal = numVal - mainVal;
+
+    if (pointVal >= 0.5) {
+      return Math.ceil(numVal);
+    } else {
+      return Math.floor(numVal);
+    }
+  };
 
   let customerVal;
   if (!customerId) {
+    // if new review is made
+
+    const checkIfReviewExists = await Review.findOne({
+      $or: [
+        {
+          $and: [
+            {
+              customerEmail: customerEmail,
+            },
+
+            {
+              serviceProviderId: req.user._id,
+            },
+          ],
+        },
+        {
+          $and: [
+            {
+              customerContact: customerContact,
+            },
+
+            {
+              serviceProviderId: req.user._id,
+            },
+          ],
+        },
+      ],
+    });
+
+    if (checkIfReviewExists && checkIfReviewExists.isActive) {
+      return next(new AppError(400, errorMessages.review.reviewExists));
+    }
+
     customerVal = await Customer.create({
       name: customerName,
       email: customerEmail,
       contact: customerContact,
-      starsRating: parseInt(starsRating),
-      totalQuestionsRating: parseInt(totalQuestionsRatingValue),
-      overallRating: twoDecimalVals(
-        (totalQuestionsRatingValue + starsRating) / 2
-      ),
+      starsRating: getStarsRating(starsRating),
       question0: {
         questionId: question0.id,
-        value: question0.value,
+        value: question0.value * 1,
       },
       question1: {
         questionId: question1.id,
-        value: question1.value,
+        value: question1.value * 1,
       },
       question2: {
         questionId: question2.id,
-        value: question2.value,
+        value: question2.value * 1,
       },
       question3: {
         questionId: question3.id,
-        value: question3.value,
+        value: question3.value * 1,
       },
       question4: {
         questionId: question4.id,
-        value: question4.value,
+        value: question4.value * 1,
       },
+      totalReviews: 1,
     });
   } else {
+    // if customer already has review
+
     let customer = await Customer.findById(customerId);
 
     const checkIfReviewExists = await Review.findOne({
@@ -96,43 +134,40 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
     const lengthOfTotalReviews = customer.reviews.length + 1;
 
     const toUpdateData = {
-      starsRating: twoDecimalVals(
+      starsRating: getStarsRating(
         (customer.starsRating + starsRating) / lengthOfTotalReviews
-      ),
-      totalQuestionsRating: twoDecimalVals(
-        (customer.totalQuestionsRating + totalQuestionsRatingValue) /
-          lengthOfTotalReviews
-      ),
-      overallRating: twoDecimalVals(
-        (customer.overallRating +
-          (totalQuestionsRatingValue + starsRating) / 2) /
-          lengthOfTotalReviews
       ),
       question0: {
         questionId: question0.id,
-        value:
-          (customer.question0.value + question0.value) / lengthOfTotalReviews,
+        value: twoDecimalVals(
+          (customer.question0.value + question0.value) / lengthOfTotalReviews
+        ),
       },
       question1: {
         questionId: question1.id,
-        value:
-          (customer.question1.value + question1.value) / lengthOfTotalReviews,
+        value: twoDecimalVals(
+          (customer.question1.value + question1.value) / lengthOfTotalReviews
+        ),
       },
       question2: {
         questionId: question2.id,
-        value:
-          (customer.question2.value + question2.value) / lengthOfTotalReviews,
+        value: twoDecimalVals(
+          (customer.question2.value + question2.value) / lengthOfTotalReviews
+        ),
       },
       question3: {
         questionId: question3.id,
-        value:
-          (customer.question3.value + question3.value) / lengthOfTotalReviews,
+        value: twoDecimalVals(
+          (customer.question3.value + question3.value) / lengthOfTotalReviews
+        ),
       },
       question4: {
         questionId: question4.id,
-        value:
-          (customer.question4.value + question4.value) / lengthOfTotalReviews,
+        value: twoDecimalVals(
+          (customer.question4.value + question4.value) / lengthOfTotalReviews
+        ),
       },
+      totalReviews: lengthOfTotalReviews,
     };
 
     // add new rating for the customer
@@ -148,30 +183,26 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
     customerName: customerVal.name,
     customerEmail: customerVal.email,
     customerContact: customerVal.contact,
-    starsRating: twoDecimalVals(starsRating),
-    overallRating: twoDecimalVals(
-      (totalQuestionsRatingValue + starsRating) / 2
-    ),
-    totalQuestionsRating: twoDecimalVals(totalQuestionsRatingValue),
+    starsRating: starsRating,
     question0: {
       questionId: question0.id,
-      value: question0.value,
+      value: question0.value * 1,
     },
     question1: {
       questionId: question1.id,
-      value: question1.value,
+      value: question1.value * 1,
     },
     question2: {
       questionId: question2.id,
-      value: question2.value,
+      value: question2.value * 1,
     },
     question3: {
       questionId: question3.id,
-      value: question3.value,
+      value: question3.value * 1,
     },
     question4: {
       questionId: question4.id,
-      value: question4.value,
+      value: question4.value * 1,
     },
     review,
   };
@@ -183,17 +214,20 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
     customerVal._id,
     {
       reviews: [...customerVal.reviews, reviewNew._id],
-      totalReviews: parseInt(customerVal.totalReviews) + 1,
+      totalReviews: parseInt(customerVal.totalReviews),
     },
     { new: true }
   );
 
   // add review to the serviceprovider array
+  const totalReviewsForServiceProvider =
+    await ServiceProvider.findByIdAndUpdate(req.user._id);
+
   await ServiceProvider.findByIdAndUpdate(
     req.user._id,
     {
       reviews: [...req.user.reviews, reviewNew._id],
-      totalReviews: parseInt(customerVal.totalReviews),
+      totalReviews: totalReviewsForServiceProvider.totalReviews + 1,
     },
     { new: true }
   );
@@ -204,9 +238,6 @@ exports.addReview = catchAsyncError(async (req, res, next) => {
 exports.editReview = catchAsyncError(async (req, res, next) => {
   const {
     reviewId,
-    customerName,
-    customerEmail,
-    customerContact,
     starsRating,
     question0,
     question1,
@@ -216,82 +247,120 @@ exports.editReview = catchAsyncError(async (req, res, next) => {
     review,
   } = req.body;
 
-  const totalQuestionsRatingValue =
-    question0.value +
-    question1.value +
-    question2.value +
-    question3.value +
-    question4.value;
+  const twoDecimalVals = (num) => {
+    return parseFloat(num).toFixed(2) * 1;
+  };
+
+  const getStarsRating = (val) => {
+    const numVal = val * 1;
+    const mainVal = Math.floor(val);
+    const pointVal = numVal - mainVal;
+
+    if (pointVal >= 0.5) {
+      return Math.ceil(numVal);
+    } else {
+      return Math.floor(numVal);
+    }
+  };
 
   const reviewNew = await Review.findByIdAndUpdate(
     reviewId,
     {
-      customerName: customerName,
-      customerEmail: customerEmail,
-      customerContact: customerContact,
       starsRating: parseInt(starsRating),
-      overallRating: parseInt(totalQuestionsRatingValue + starsRating),
-      totalQuestionsRating: parseInt(totalQuestionsRatingValue),
       question0: {
         questionId: question0.id,
-        value: question0.value,
+        value: question0.value * 1,
       },
       question1: {
         questionId: question1.id,
-        value: question1.value,
+        value: question1.value * 1,
       },
       question2: {
         questionId: question2.id,
-        value: question2.value,
+        value: question2.value * 1,
       },
       question3: {
         questionId: question3.id,
-        value: question3.value,
+        value: question3.value * 1,
       },
       question4: {
         questionId: question4.id,
-        value: question4.value,
+        value: question4.value * 1,
       },
       review,
     },
     { new: true }
   );
 
-  sendResponseValue(res, reviewNew);
+  // edit the new rating for customer
+  let customer = await Customer.findById(reviewNew.customerId).populate(
+    "reviews"
+  );
+
+  const reviewTotal = customer.reviews.length;
+
+  const newStarRatings = getStarsRating(
+    customer.reviews.map((el) => el.starsRating).reduce((a, b) => a + b) /
+      reviewTotal
+  );
+  const newQuesOne = twoDecimalVals(
+    customer.reviews.map((el) => el.question0.value).reduce((a, b) => a + b) /
+      reviewTotal
+  );
+  const newQuesTwo = twoDecimalVals(
+    customer.reviews.map((el) => el.question1.value).reduce((a, b) => a + b) /
+      reviewTotal
+  );
+  const newQuesThree = twoDecimalVals(
+    customer.reviews.map((el) => el.question2.value).reduce((a, b) => a + b) /
+      reviewTotal
+  );
+  const newQuesFour = twoDecimalVals(
+    customer.reviews.map((el) => el.question3.value).reduce((a, b) => a + b) /
+      reviewTotal
+  );
+  const newQuesFive = twoDecimalVals(
+    customer.reviews.map((el) => el.question4.value).reduce((a, b) => a + b) /
+      reviewTotal
+  );
+
+  const updatedCustomer = {
+    starsRating: newStarRatings,
+    question0: {
+      questionId: question0.id,
+      value: newQuesOne,
+    },
+    question1: {
+      questionId: question1.id,
+      value: newQuesTwo,
+    },
+    question2: {
+      questionId: question2.id,
+      value: newQuesThree,
+    },
+    question3: {
+      questionId: question3.id,
+      value: newQuesFour,
+    },
+    question4: {
+      questionId: question4.id,
+      value: newQuesFive,
+    },
+  };
+
+  await Customer.findByIdAndUpdate(customer._id, updatedCustomer);
+
+  sendResponse(reviewNew, 200, res);
 });
 
 exports.myReviews = catchAsyncError(async (req, res, next) => {
   const { _id } = req.user;
 
-  const reviews = await Review.find({ serviceProviderId: _id });
-
-  sendResponse(reviews, 200, res);
-});
-
-exports.previousRatings = catchAsyncError(async (req, res, next) => {
-  const favourites = req.user.favouriteCustomers;
-
-  const { page, limit } = req.body;
-
-  const pageOptions = {
-    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
-    limitVal: parseInt(limit) || 5,
-  };
-
-  let previousRatings = await Review.find({
-    serviceProviderId: req.user._id,
-  })
-    .sort("-updatedAt")
-    .skip(pageOptions.skipVal)
-    .limit(pageOptions.limitVal);
-
-  previousRatings = previousRatings.map((el) =>
-    favourites.includes(el.customerId)
-      ? { ...el._doc, isFavourite: true }
-      : { ...el._doc, isFavourite: false }
+  const reviews = await Review.find({ serviceProviderId: _id }).populate(
+    "question0.questionId"
   );
 
-  sendResponse(previousRatings, 200, res);
+  sendResponse(reviews, 200, res);
 });
 
 exports.getQuestionsForReview = catchAsyncError(async (req, res, next) => {
@@ -305,18 +374,34 @@ exports.getQuestionsForReview = catchAsyncError(async (req, res, next) => {
 exports.getCustomerDetails = catchAsyncError(async (req, res, next) => {
   const { id } = req.body;
 
+  const { page, limit } = req.query;
+
+  const { favouriteCustomers } = req.user;
+
+  const pageOptions = {
+    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+    limitVal: parseInt(limit) || 5,
+  };
+
   const populateString = `question0.questionId question1.questionId question2.questionId question3.questionId question4.questionId`;
 
-  const customer = await Customer.findById(id)
+  let customer = await Customer.findById(id)
     .populate({
       path: "reviews",
-      select: "review updatedAt overallRating",
+      select: "review starsRating updatedAt ",
       populate: {
         path: "serviceProviderId",
         select: "name -_id",
       },
     })
-    .populate(populateString, "_id title details");
+    .populate(populateString, "_id title details")
+    .sort("-updatedAt")
+    .skip(pageOptions.skipVal)
+    .limit(pageOptions.limitVal);
+
+  customer = favouriteCustomers.includes(customer._id)
+    ? { ...customer._doc, isFavourite: true }
+    : { ...customer._doc, isFavourite: false };
 
   sendResponse(customer, 200, res);
 });
@@ -337,7 +422,9 @@ exports.resizePhoto = (req, res, next) => {
 
   sharp(req.file.buffer)
     .jpeg({ quality: 100 })
-    .toFile(`public/images/serviceproviders/${req.file.filename}.jpeg`);
+    .toFile(
+      `${process.env.DEV}/public/images/serviceproviders/${req.file.filename}.jpeg`
+    );
 
   next();
 };
@@ -383,7 +470,7 @@ exports.search = catchAsyncError(async (req, res, next) => {
       },
     ],
   })
-    .select("name overallRating totalReviews")
+    .select("name  totalReviews")
     .limit(5);
 
   sendResponse(results, 200, res);
@@ -395,7 +482,7 @@ exports.homeScreen = catchAsyncError(async (req, res, next) => {
       path: "reviews favouriteCustomers",
       options: { perDocumentLimit: 5 },
       select:
-        "customerName overallRating review updatedAt totalReviews name customerId",
+        "customerName starsRating  review updatedAt totalReviews name customerId",
     })
     .sort("-updatedAt");
 
@@ -423,41 +510,22 @@ exports.addToFavouriteCustomer = catchAsyncError(async (req, res, next) => {
     { new: true }
   );
 
-  let favouriteCustomersReviews = await Review.find({
-    customerId: {
-      $in: favouriteCustomerValues.favouriteCustomers,
-    },
-  }).select("customerName overallRating review");
-
-  sendResponse(favouriteCustomersReviews, 200, res);
+  sendResponse(favouriteCustomerValues.favouriteCustomers, 200, res);
 });
 
 exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
-  const { rating, page, limit } = req.body;
+  const { searchText, rating, page, limit } = req.query;
 
-  const pageOptions = {
-    skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
-    limitVal: parseInt(limit) || 5,
-  };
+  if (!searchText && !rating && !page && !limit) {
+    const favouriteCustomers = await ServiceProvider.findById(req.user._id)
+      .populate({
+        path: "favouriteCustomers",
+        select: "name email contact starsRating totalReviews",
+      })
+      .select("favouriteCustomers");
 
-  let customers = await ServiceProvider.findById(req.user._id)
-    .populate("favouriteCustomers", "overallRating name totalReviews")
-    .sort("-updatedAt")
-    .select("favouriteCustomers")
-    .skip(pageOptions.skipVal)
-    .limit(pageOptions.limitVal);
-
-  if (rating) {
-    customers = customers.favouriteCustomers.filter(
-      (el) => Math.floor(el.overallRating) === parseInt(rating)
-    );
+    return sendResponse(favouriteCustomers, 200, res);
   }
-
-  sendResponse(customers, 200, res);
-});
-
-exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
-  const { searchText, rating, page, limit } = req.body;
 
   let ratingVal = rating * 1 || 1;
   let searchVal = searchText || "";
@@ -470,7 +538,7 @@ exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
   const favourites = await ServiceProvider.findById(req.user._id)
     .populate({
       path: "favouriteCustomers",
-      select: "name email contact overallRating totalReviews",
+      select: "name email contact starsRating totalReviews",
       match: {
         $or: [
           {
@@ -492,8 +560,8 @@ exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
             },
           },
         ],
-        overallRating: {
-          $gte: ratingVal,
+        starsRating: {
+          $eq: ratingVal,
         },
       },
     })
@@ -503,10 +571,30 @@ exports.searchFavouriteCustomers = catchAsyncError(async (req, res, next) => {
 
   sendResponse(favourites, 200, res);
 });
-exports.searchPreviousRatings = catchAsyncError(async (req, res, next) => {
-  const { searchText, rating, page, limit } = req.body;
 
-  let ratingVal = rating * 1 || 1;
+exports.previousRatings = catchAsyncError(async (req, res, next) => {
+  const { searchText, rating, page, limit } = req.query;
+
+  const favouriteCustomers = req.user.favouriteCustomers;
+
+  if (!searchText && !rating && !page && !limit) {
+    let previousRatings = await ServiceProvider.findById(req.user._id)
+      .populate({
+        path: "reviews",
+        select: "name email review starsRating customerName",
+      })
+      .select("reviews");
+
+    previousRatings = previousRatings.reviews.map((el) =>
+      favouriteCustomers.includes(el._id)
+        ? { ...el._doc, isFavourite: true }
+        : { ...el._doc, isFavourite: false }
+    );
+
+    return sendResponse(previousRatings, 200, res);
+  }
+
+  let ratingVal = rating * 1 || null;
   let searchVal = searchText || "";
 
   const pageOptions = {
@@ -514,40 +602,77 @@ exports.searchPreviousRatings = catchAsyncError(async (req, res, next) => {
     limitVal: parseInt(limit) || 5,
   };
 
-  const favouriteReviews = req.user.favouriteCustomers;
+  let previousRatingsVal;
+  if (!ratingVal) {
+    previousRatingsVal = await ServiceProvider.findById(req.user._id)
+      .populate({
+        path: "reviews",
+        match: {
+          $or: [
+            {
+              customerName: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              customerEmail: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              customerContact: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+          ],
+        },
+        select: "customerName starsRating review",
+      })
+      .select("reviews");
+  } else {
+    previousRatingsVal = await ServiceProvider.findById(req.user._id)
+      .populate({
+        path: "reviews",
+        match: {
+          $or: [
+            {
+              customerName: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              customerEmail: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              customerContact: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+          ],
+          starsRating: {
+            $eq: ratingVal,
+          },
+        },
+        select: "customerName  starsRating review",
+      })
+      .select("reviews");
+  }
 
-  const favourites = await Review.find({
-    isActive: true,
-    $or: [
-      {
-        name: {
-          $regex: searchVal,
-          $options: "i",
-        },
-      },
-      {
-        email: {
-          $regex: searchVal,
-          $options: "i", 
-        },
-      },
-      {
-        contact: {
-          $regex: searchVal,
-          $options: "i",
-        },
-      },
-    ],
-    overallRating: {
-      $gte: ratingVal,
-    },
-  })
-    .sort("-updatedAt")
-    .select("customerName overallRating review")
-    .skip(pageOptions.skipVal)
-    .limit(pageOptions.limitVal);
+  previousRatingsVal = previousRatingsVal.reviews.map((el) =>
+    favouriteCustomers.includes(el._id)
+      ? { ...el._doc, isFavourite: true }
+      : { ...el._doc, isFavourite: false }
+  );
 
-  sendResponse(favourites, 200, res);
+  sendResponse(previousRatingsVal, 200, res);
 });
 
 // exports.addToFavourites = catchAsyncError(async (req, res, next) => {
@@ -571,4 +696,54 @@ exports.searchPreviousRatings = catchAsyncError(async (req, res, next) => {
 //   reviews = reviews.favouriteReviews;
 
 //   sendResponse(reviews, 200, res);
+// });
+
+// exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
+//   const { rating, page, limit, searchText } = req.query;
+
+//   const pageOptions = {
+//     skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+//     limitVal: parseInt(limit) || 5,
+//   };
+
+//   let customers = await ServiceProvider.findById(req.user._id)
+//     .populate("favouriteCustomers", " name totalReviews")
+//     .sort("-updatedAt")
+//     .select("favouriteCustomers")
+//     .skip(pageOptions.skipVal)
+//     .limit(pageOptions.limitVal);
+
+//   if (rating) {
+//     customers = customers.favouriteCustomers.filter(
+//       (el) => Math.floor(el.starsRating) === parseInt(rating)
+//     );
+//   }
+
+//   sendResponse(customers, 200, res);
+// });
+
+// exports.previousRatings = catchAsyncError(async (req, res, next) => {
+//   const favourites = req.user.favouriteCustomers;
+
+//   const { page, limit } = req.query;
+
+// const pageOptions = {
+//   skipVal: (parseInt(page) - 1 || 0) * (parseInt(limit) || 5),
+//   limitVal: parseInt(limit) || 5,
+// };
+
+//   let previousRatings = await Review.find({
+//     serviceProviderId: req.user._id,
+//   })
+// .sort("-updatedAt")
+// .skip(pageOptions.skipVal)
+// .limit(pageOptions.limitVal);
+
+// previousRatings = previousRatings.map((el) =>
+//   favourites.includes(el.customerId)
+//     ? { ...el._doc, isFavourite: true }
+//     : { ...el._doc, isFavourite: false }
+// );
+
+//   sendResponse(previousRatings, 200, res);
 // });

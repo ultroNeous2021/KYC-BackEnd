@@ -26,17 +26,9 @@ const CustomerSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    overallRating: {
-      type: Number,
-      required: [true, errorMessages.other.overallRating],
-    },
     starsRating: {
       type: Number,
-      required: [true, errorMessages.other.overallRating],
-    },
-    totalQuestionsRating: {
-      type: Number,
-      required: [true, errorMessages.other.totalQuestionsRating],
+      required: [true, errorMessages.other.startsRating],
     },
     question0: {
       type: Object,

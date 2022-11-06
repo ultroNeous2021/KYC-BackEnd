@@ -18,13 +18,13 @@ exports.getAllCustomers = catchAsyncError(async (req, res, next) => {
     users = await Customer.findById(id)
       .populate({
         path: "reviews",
-        select: "review overallRating isActive",
+        select: "review isActive",
         populate: {
           path: "serviceProviderId",
           select: "name",
         },
       })
-      .select("name email contact overallRating totalReviews");
+      .select("name email contact totalReviews");
   } else {
     users = await Customer.find().sort("-updatedAt");
   }
@@ -44,13 +44,13 @@ exports.getAllServiceProviders = catchAsyncError(async (req, res, next) => {
     users = await ServiceProvider.findById(id)
       .populate({
         path: "reviews",
-        select: "review overallRating isActive",
+        select: "review isActive",
         populate: {
           path: "customerId",
           select: "name",
         },
       })
-      .select("name email contact overallRating totalReviews");
+      .select("name email contact totalReviews");
   } else {
     users = await ServiceProvider.find({
       _id: { $ne: currentUser },
@@ -148,8 +148,7 @@ exports.deleteReview = catchAsyncError(async (req, res, next) => {
     select: "reviews",
     populate: {
       path: "reviews",
-      select:
-        "question0 question1 question2 question3 question4 overallRating starsRating totalQuestionsRating",
+      select: "question0 question1 question2 question3 question4 starsRating",
     },
   });
 
@@ -162,8 +161,6 @@ exports.deleteReview = catchAsyncError(async (req, res, next) => {
   let updatedReviewListLength = updatedReviewList.length;
 
   let valuesToBeUpdated = {
-    totalQuestionsRating: 0,
-    overallRating: 0,
     starsRating: 0,
     totalReviews: 0,
     reviews: [],
@@ -171,31 +168,11 @@ exports.deleteReview = catchAsyncError(async (req, res, next) => {
 
   if (updatedReviewListLength > 0) {
     // TotalQuesRat = (q1 + q2 + q4 + q5) + (q1 + q2 + q3 + q4 + q5) + ..... / Total No. of reviews
-    valuesToBeUpdated.totalQuestionsRating =
-      (
-        updatedReviewList
-          .map(
-            (el) =>
-              el.question0.value +
-              el.question1.value +
-              el.question2.value +
-              el.question3.value +
-              el.question4.value
-          )
-          .reduce((a, b) => a + b) / updatedReviewListLength
-      ).toFixed(1) * 1;
 
     valuesToBeUpdated.starsRating =
       (
         updatedReviewList.map((el) => el.starsRating).reduce((a, b) => a + b) /
         updatedReviewListLength
-      ).toFixed(1) * 1;
-
-    valuesToBeUpdated.overallRating =
-      (
-        (valuesToBeUpdated.totalQuestionsRating +
-          valuesToBeUpdated.starsRating) /
-        2
       ).toFixed(1) * 1;
 
     valuesToBeUpdated.reviews = updatedReviewArr;
