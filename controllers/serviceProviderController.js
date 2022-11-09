@@ -389,15 +389,17 @@ exports.getCustomerDetails = catchAsyncError(async (req, res, next) => {
     .populate({
       path: "reviews",
       select: "review starsRating updatedAt ",
+      options: {
+        skip: pageOptions.skipVal,
+        limit: pageOptions.limitVal,
+      },
       populate: {
         path: "serviceProviderId",
         select: "name -_id",
       },
     })
     .populate(populateString, "_id title details")
-    .sort("-updatedAt")
-    .skip(pageOptions.skipVal)
-    .limit(pageOptions.limitVal);
+    .sort("-updatedAt");
 
   customer = favouriteCustomers.includes(customer._id)
     ? { ...customer._doc, isFavourite: true }
@@ -539,6 +541,10 @@ exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
     .populate({
       path: "favouriteCustomers",
       select: "name email contact starsRating totalReviews",
+      options: {
+        skip: pageOptions.skipVal,
+        limit: pageOptions.limitVal,
+      },
       match: {
         $or: [
           {
@@ -576,17 +582,21 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
   const { searchText, rating, page, limit } = req.query;
 
   const favouriteCustomers = req.user.favouriteCustomers;
+  const populateString = `question0.questionId question1.questionId question2.questionId question3.questionId question4.questionId`;
 
   if (!searchText && !rating && !page && !limit) {
     let previousRatings = await ServiceProvider.findById(req.user._id)
+      .select("reviews")
       .populate({
         path: "reviews",
-        select: "name email review starsRating customerName",
-      })
-      .select("reviews");
+        populate: {
+          path: populateString,
+          select: "title details",
+        },
+      });
 
     previousRatings = previousRatings.reviews.map((el) =>
-      favouriteCustomers.includes(el._id)
+      favouriteCustomers.includes(el.customerId)
         ? { ...el._doc, isFavourite: true }
         : { ...el._doc, isFavourite: false }
     );
@@ -607,6 +617,10 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
     previousRatingsVal = await ServiceProvider.findById(req.user._id)
       .populate({
         path: "reviews",
+        options: {
+          skip: pageOptions.skipVal,
+          limit: pageOptions.limitVal,
+        },
         match: {
           $or: [
             {
@@ -629,13 +643,22 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
             },
           ],
         },
-        select: "customerName starsRating review",
+        select:
+          "customerName starsRating review question0.value question1.value question2.value question3.value question4.value",
+        populate: {
+          path: populateString,
+          select: "title details",
+        },
       })
       .select("reviews");
   } else {
     previousRatingsVal = await ServiceProvider.findById(req.user._id)
       .populate({
         path: "reviews",
+        options: {
+          skip: pageOptions.skipVal,
+          limit: pageOptions.limitVal,
+        },
         match: {
           $or: [
             {
@@ -661,7 +684,12 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
             $eq: ratingVal,
           },
         },
-        select: "customerName  starsRating review",
+        select:
+          "customerName starsRating review question0.value question1.value question2.value question3.value question4.value",
+        populate: {
+          path: populateString,
+          select: "title details",
+        },
       })
       .select("reviews");
   }
@@ -673,6 +701,14 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
   );
 
   sendResponse(previousRatingsVal, 200, res);
+});
+
+exports.getReviewDetails = catchAsyncError(async (req, res, next) => {
+  const { id } = req.body;
+
+  const review = await Review.findById(id).populate("question0.questionId");
+
+  sendResponse(review, 200, res);
 });
 
 // exports.addToFavourites = catchAsyncError(async (req, res, next) => {

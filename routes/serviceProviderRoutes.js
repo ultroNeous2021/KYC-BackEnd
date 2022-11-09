@@ -94,6 +94,11 @@ router.post(
   authController.protect,
   serviceProviderController.getCustomerDetails
 );
+router.post(
+  "/getReviewDetails",
+  authController.protect,
+  serviceProviderController.getReviewDetails
+);
 // router.post(
 //   "/searchFavouriteCustomers",
 //   authController.protect,

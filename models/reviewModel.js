@@ -36,38 +36,33 @@ const ReviewSchema = new mongoose.Schema(
     },
     question0: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question1: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question2: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question3: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     question4: {
       type: Object,
-      default: {
-        questionId: mongoose.Schema.Types.ObjectId,
-        value: 0,
-      },
+      questionId: mongoose.Schema.Types.ObjectId,
+      value: 0,
+      ref: "Question",
     },
     review: {
       type: String,
