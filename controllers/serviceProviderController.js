@@ -395,7 +395,7 @@ exports.getCustomerDetails = catchAsyncError(async (req, res, next) => {
       },
       populate: {
         path: "serviceProviderId",
-        select: "name -_id",
+        select: "name email -_id",
       },
     })
     .populate(populateString, "_id title details")
@@ -424,9 +424,7 @@ exports.resizePhoto = (req, res, next) => {
 
   sharp(req.file.buffer)
     .jpeg({ quality: 100 })
-    .toFile(
-      `${process.env.DEV}/public/images/serviceproviders/${req.file.filename}.jpeg`
-    );
+    .toFile(`public/images/serviceproviders/${req.file.filename}.jpeg`);
 
   next();
 };
@@ -437,7 +435,7 @@ exports.editProfile = catchAsyncError(async (req, res, next) => {
     {
       name: req.body.name,
       image: req.file
-        ? `public/images/serviceproviders/${req.file.filename}.jpeg`
+        ? `${process.env.DEV}/public/images/serviceproviders/${req.file.filename}.jpeg`
         : req.user.image,
     },
     { new: true }
@@ -472,7 +470,7 @@ exports.search = catchAsyncError(async (req, res, next) => {
       },
     ],
   })
-    .select("name  totalReviews")
+    .select("name email contact starsRating  totalReviews")
     .limit(5);
 
   sendResponse(results, 200, res);
@@ -644,7 +642,7 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
           ],
         },
         select:
-          "customerName starsRating review question0.value question1.value question2.value question3.value question4.value",
+          "customerName customerId starsRating review question0.value question1.value question2.value question3.value question4.value",
         populate: {
           path: populateString,
           select: "title details",
@@ -695,7 +693,7 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
   }
 
   previousRatingsVal = previousRatingsVal.reviews.map((el) =>
-    favouriteCustomers.includes(el._id)
+    favouriteCustomers.includes(el.customerId)
       ? { ...el._doc, isFavourite: true }
       : { ...el._doc, isFavourite: false }
   );

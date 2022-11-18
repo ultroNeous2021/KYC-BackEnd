@@ -27,7 +27,13 @@ const generateOtp = () => {
 
 const multerStorage = multer.memoryStorage();
 const multerFilter = (req, file, cb) => {
-  const whitelist = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+  const whitelist = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/webp",
+    "application/octet-stream",
+  ];
 
   if (whitelist.includes(file.mimetype)) {
     cb(null, true);

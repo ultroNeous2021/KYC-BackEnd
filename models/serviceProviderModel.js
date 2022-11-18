@@ -25,7 +25,7 @@ const ServiceProviderSchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      default: "public/images/serviceproviders/default.png",
+      default: `${process.env.DEV}/public/images/serviceproviders/default.png`,
     },
     role: {
       type: String,
