@@ -527,7 +527,7 @@ exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
     return sendResponse(favouriteCustomers, 200, res);
   }
 
-  let ratingVal = rating * 1 || 1;
+  let ratingVal = rating * 1 || null;
   let searchVal = searchText || "";
 
   const pageOptions = {
@@ -535,43 +535,78 @@ exports.getFavouriteCustomer = catchAsyncError(async (req, res, next) => {
     limitVal: parseInt(limit) || 5,
   };
 
-  const favourites = await ServiceProvider.findById(req.user._id)
-    .populate({
-      path: "favouriteCustomers",
-      select: "name email contact starsRating totalReviews",
-      options: {
-        skip: pageOptions.skipVal,
-        limit: pageOptions.limitVal,
-      },
-      match: {
-        $or: [
-          {
-            name: {
-              $regex: searchVal,
-              $options: "i",
-            },
-          },
-          {
-            email: {
-              $regex: searchVal,
-              $options: "i",
-            },
-          },
-          {
-            contact: {
-              $regex: searchVal,
-              $options: "i",
-            },
-          },
-        ],
-        starsRating: {
-          $eq: ratingVal,
+  let favourites;
+
+  if (!ratingVal) {
+    favourites = await ServiceProvider.findById(req.user._id)
+      .populate({
+        path: "favouriteCustomers",
+        select: "name email contact starsRating totalReviews",
+        options: {
+          skip: pageOptions.skipVal,
+          limit: pageOptions.limitVal,
         },
-      },
-    })
-    .select("favouriteCustomers")
-    .skip(pageOptions.skipVal)
-    .limit(pageOptions.limitVal);
+        match: {
+          $or: [
+            {
+              name: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              email: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              contact: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+          ],
+        },
+      })
+      .select("favouriteCustomers");
+  } else {
+    favourites = await ServiceProvider.findById(req.user._id)
+      .populate({
+        path: "favouriteCustomers",
+        select: "name email contact starsRating totalReviews",
+        options: {
+          skip: pageOptions.skipVal,
+          limit: pageOptions.limitVal,
+        },
+        match: {
+          $or: [
+            {
+              name: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              email: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+            {
+              contact: {
+                $regex: searchVal,
+                $options: "i",
+              },
+            },
+          ],
+          starsRating: {
+            $eq: ratingVal,
+          },
+        },
+      })
+      .select("favouriteCustomers");
+  }
 
   sendResponse(favourites, 200, res);
 });
@@ -642,7 +677,7 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
           ],
         },
         select:
-          "customerName customerId starsRating review question0.value question1.value question2.value question3.value question4.value",
+          "customerName customerId starsRating review question0.value question1.value question2.value question3.value question4.value updatedAt",
         populate: {
           path: populateString,
           select: "title details",
@@ -683,7 +718,7 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
           },
         },
         select:
-          "customerName starsRating review question0.value question1.value question2.value question3.value question4.value",
+          "customerName customerId starsRating review question0.value question1.value question2.value question3.value question4.value updatedAt",
         populate: {
           path: populateString,
           select: "title details",
