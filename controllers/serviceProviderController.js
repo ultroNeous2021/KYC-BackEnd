@@ -677,7 +677,7 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
           ],
         },
         select:
-          "customerName customerId starsRating review question0.value question1.value question2.value question3.value question4.value updatedAt",
+          "customerName customerId customerEmail customerContact starsRating review question0.value question1.value question2.value question3.value question4.value updatedAt",
         populate: {
           path: populateString,
           select: "title details",
@@ -718,7 +718,7 @@ exports.previousRatings = catchAsyncError(async (req, res, next) => {
           },
         },
         select:
-          "customerName customerId starsRating review question0.value question1.value question2.value question3.value question4.value updatedAt",
+          "customerName customerId customerEmail customerContact starsRating review question0.value question1.value question2.value question3.value question4.value updatedAt",
         populate: {
           path: populateString,
           select: "title details",
