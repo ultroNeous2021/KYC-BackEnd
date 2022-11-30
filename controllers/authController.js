@@ -5,6 +5,7 @@ const AppError = require("../utils/appError");
 const { sendResponse, generateOtp } = require("../utils/commonFunctions.js");
 const ServiceProvider = require("../models/serviceProviderModel");
 const { errorMessages } = require("../utils/messages");
+const { sendEmailToUser } = require("../utils/emailSetup");
 
 // extract user info from the token and pass user details to the next middleware
 exports.protect = catchAsyncError(async (req, res, next) => {
@@ -54,6 +55,14 @@ exports.signUp = catchAsyncError(async (req, res, next) => {
     otpCreatedAt,
   });
 
+  sendEmailToUser(
+    userDetails._doc.email,
+    userDetails._doc.name,
+    "Welcome to KYC",
+    userDetails._doc.otp,
+    "Signup"
+  );
+
   delete userDetails._doc.password;
   delete userDetails._doc.otp;
   delete userDetails._doc.otpCreatedAt;
@@ -66,8 +75,6 @@ exports.signIn = catchAsyncError(async (req, res, next) => {
   const { email, password } = req.body;
 
   user = await ServiceProvider.findOne({ email }).select("+password");
-
-
 
   if (!user) {
     return next(new AppError(409, errorMessages.password.wrongPwd));
@@ -94,7 +101,7 @@ exports.verifyOtp = catchAsyncError(async (req, res, next) => {
   if (
     Date.now() >
     new Date(`${otpCreatedAt}`).getTime() +
-    1000 * 60 * process.env.OTP_EXPIRES_IN
+      1000 * 60 * process.env.OTP_EXPIRES_IN
   ) {
     req.user.otp = "";
     await req.user.save();
@@ -137,6 +144,13 @@ exports.forgetPassword = catchAsyncError(async (req, res, next) => {
   }
 
   // send email for password
+  sendEmailToUser(
+    user._doc.email,
+    user._doc.name,
+    "Welcome to KYC",
+    otp,
+    "Forgot Password?"
+  );
 
   delete user._doc.otp;
   delete user._doc.otpCreatedAt;
